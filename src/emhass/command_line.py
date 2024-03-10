@@ -23,7 +23,7 @@ from emhass.optimization import Optimization
 from emhass import utils
 
 
-def set_input_data_dict(config_path: pathlib.Path, base_path: str, costfun: str, 
+def set_input_data_dict(config_path: pathlib.Path, base_path: str, costfun: str,
     params: str, runtimeparams: str, set_type: str, logger: logging.Logger,
     get_data_from_file: Optional[bool] = False) -> dict:
     """
@@ -55,16 +55,16 @@ def set_input_data_dict(config_path: pathlib.Path, base_path: str, costfun: str,
         config_path, use_secrets=not(get_data_from_file), params=params)
     # Treat runtimeparams
     params, retrieve_hass_conf, optim_conf, plant_conf = utils.treat_runtimeparams(
-        runtimeparams, params, retrieve_hass_conf, 
+        runtimeparams, params, retrieve_hass_conf,
         optim_conf, plant_conf, set_type, logger)
     # Define main objects
-    rh = RetrieveHass(retrieve_hass_conf['hass_url'], retrieve_hass_conf['long_lived_token'], 
-                       retrieve_hass_conf['freq'], retrieve_hass_conf['time_zone'], 
+    rh = RetrieveHass(retrieve_hass_conf['hass_url'], retrieve_hass_conf['long_lived_token'],
+                       retrieve_hass_conf['freq'], retrieve_hass_conf['time_zone'],
                        params, base_path, logger, get_data_from_file=get_data_from_file)
     fcst = Forecast(retrieve_hass_conf, optim_conf, plant_conf,
                     params, base_path, logger, get_data_from_file=get_data_from_file)
-    opt = Optimization(retrieve_hass_conf, optim_conf, plant_conf, 
-                       fcst.var_load_cost, fcst.var_prod_price, 
+    opt = Optimization(retrieve_hass_conf, optim_conf, plant_conf,
+                       fcst.var_load_cost, fcst.var_prod_price,
                        costfun, base_path, logger)
     # Perform setup based on type of action
     if set_type == "perfect-optim":
@@ -77,10 +77,10 @@ def set_input_data_dict(config_path: pathlib.Path, base_path: str, costfun: str,
             var_list = [retrieve_hass_conf['var_load'], retrieve_hass_conf['var_PV']]
             if not rh.get_data(days_list, var_list,
                         minimal_response=False, significant_changes_only=False):
-                return False 
+                return False
         if not rh.prepare_data(retrieve_hass_conf['var_load'], load_negative = retrieve_hass_conf['load_negative'],
-                        set_zero_min = retrieve_hass_conf['set_zero_min'], 
-                        var_replace_zero = retrieve_hass_conf['var_replace_zero'], 
+                        set_zero_min = retrieve_hass_conf['set_zero_min'],
+                        var_replace_zero = retrieve_hass_conf['var_replace_zero'],
                         var_interp = retrieve_hass_conf['var_interp']):
             return False
         df_input_data = rh.df_final.copy()
@@ -116,8 +116,8 @@ def set_input_data_dict(config_path: pathlib.Path, base_path: str, costfun: str,
                         minimal_response=False, significant_changes_only=False):
                 return False
         if not rh.prepare_data(retrieve_hass_conf['var_load'], load_negative = retrieve_hass_conf['load_negative'],
-                        set_zero_min = retrieve_hass_conf['set_zero_min'], 
-                        var_replace_zero = retrieve_hass_conf['var_replace_zero'], 
+                        set_zero_min = retrieve_hass_conf['set_zero_min'],
+                        var_replace_zero = retrieve_hass_conf['var_replace_zero'],
                         var_interp = retrieve_hass_conf['var_interp']):
             return False
         df_input_data = rh.df_final.copy()
@@ -179,7 +179,7 @@ def set_input_data_dict(config_path: pathlib.Path, base_path: str, costfun: str,
         'days_list': days_list
     }
     return input_data_dict
-    
+
 def perfect_forecast_optim(input_data_dict: dict, logger: logging.Logger,
     save_data_to_file: Optional[bool] = True, debug: Optional[bool] = False) -> pd.DataFrame:
     """
@@ -200,7 +200,7 @@ def perfect_forecast_optim(input_data_dict: dict, logger: logging.Logger,
     logger.info("Performing perfect forecast optimization")
     # Load cost and prod price forecast
     df_input_data = input_data_dict['fcst'].get_load_cost_forecast(
-        input_data_dict['df_input_data'], 
+        input_data_dict['df_input_data'],
         method=input_data_dict['fcst'].optim_conf['load_cost_forecast_method'])
     df_input_data = input_data_dict['fcst'].get_prod_price_forecast(
         df_input_data, method=input_data_dict['fcst'].optim_conf['prod_price_forecast_method'])
@@ -213,7 +213,7 @@ def perfect_forecast_optim(input_data_dict: dict, logger: logging.Logger,
     if not debug:
         opt_res.to_csv(pathlib.Path(input_data_dict['root']) / filename, index_label='timestamp')
     return opt_res
-    
+
 def dayahead_forecast_optim(input_data_dict: dict, logger: logging.Logger,
     save_data_to_file: Optional[bool] = False, debug: Optional[bool] = False) -> pd.DataFrame:
     """
@@ -237,10 +237,11 @@ def dayahead_forecast_optim(input_data_dict: dict, logger: logging.Logger,
         input_data_dict['df_input_data_dayahead'],
         method=input_data_dict['fcst'].optim_conf['load_cost_forecast_method'])
     df_input_data_dayahead = input_data_dict['fcst'].get_prod_price_forecast(
-        df_input_data_dayahead, 
+        df_input_data_dayahead,
         method=input_data_dict['fcst'].optim_conf['prod_price_forecast_method'])
     opt_res_dayahead = input_data_dict['opt'].perform_dayahead_forecast_optim(
-        df_input_data_dayahead, input_data_dict['P_PV_forecast'], input_data_dict['P_load_forecast'])
+        df_input_data_dayahead, input_data_dict['P_PV_forecast'], input_data_dict['P_load_forecast'],
+        input_data_dict.get('soc_init'), input_data_dict.get('soc_final'))
     # Save CSV file for publish_data
     if save_data_to_file:
         today = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
@@ -319,7 +320,7 @@ def forecast_model_fit(input_data_dict: dict, logger: logging.Logger,
     # The ML forecaster object
     mlf = MLForecaster(data, model_type, var_model, sklearn_model, num_lags, root, logger)
     # Fit the ML model
-    df_pred, df_pred_backtest = mlf.fit(split_date_delta=split_date_delta, 
+    df_pred, df_pred_backtest = mlf.fit(split_date_delta=split_date_delta,
                                         perform_backtest=perform_backtest)
     # Save model
     if not debug:
@@ -387,9 +388,9 @@ def forecast_model_predict(input_data_dict: dict, logger: logging.Logger,
         if idx_closest == -1:
             idx_closest = predictions.index.get_indexer([now_precise], method='nearest')[0]
         # Publish Load forecast
-        input_data_dict['rh'].post_data(predictions, idx_closest, 
+        input_data_dict['rh'].post_data(predictions, idx_closest,
                                         model_predict_entity_id,
-                                        model_predict_unit_of_measurement, 
+                                        model_predict_unit_of_measurement,
                                         model_predict_friendly_name,
                                         type_var = 'mlforecaster',
                                         publish_prefix=publish_prefix)
@@ -434,7 +435,7 @@ def forecast_model_tune(input_data_dict: dict, logger: logging.Logger,
     return df_pred_optim, mlf
 
 def publish_data(input_data_dict: dict, logger: logging.Logger,
-    save_data_to_file: Optional[bool] = False, 
+    save_data_to_file: Optional[bool] = False,
     opt_res_latest: Optional[pd.DataFrame] = None) -> pd.DataFrame:
     """
     Publish the data obtained from the optimization results.
@@ -479,16 +480,16 @@ def publish_data(input_data_dict: dict, logger: logging.Logger,
     publish_prefix = params['passed_data']['publish_prefix']
     # Publish PV forecast
     custom_pv_forecast_id = params['passed_data']['custom_pv_forecast_id']
-    input_data_dict['rh'].post_data(opt_res_latest['P_PV'], idx_closest, 
-                                    custom_pv_forecast_id["entity_id"], 
+    input_data_dict['rh'].post_data(opt_res_latest['P_PV'], idx_closest,
+                                    custom_pv_forecast_id["entity_id"],
                                     custom_pv_forecast_id["unit_of_measurement"],
                                     custom_pv_forecast_id["friendly_name"],
                                     type_var = 'power',
                                     publish_prefix = publish_prefix)
     # Publish Load forecast
     custom_load_forecast_id = params['passed_data']['custom_load_forecast_id']
-    input_data_dict['rh'].post_data(opt_res_latest['P_Load'], idx_closest, 
-                                    custom_load_forecast_id["entity_id"], 
+    input_data_dict['rh'].post_data(opt_res_latest['P_Load'], idx_closest,
+                                    custom_load_forecast_id["entity_id"],
                                     custom_load_forecast_id["unit_of_measurement"],
                                     custom_load_forecast_id["friendly_name"],
                                     type_var = 'power',
@@ -500,8 +501,8 @@ def publish_data(input_data_dict: dict, logger: logging.Logger,
         if "P_deferrable{}".format(k) not in opt_res_latest.columns:
             logger.error("P_deferrable{}".format(k)+" was not found in results DataFrame. Optimization task may need to be relaunched or it did not converge to a solution.")
         else:
-            input_data_dict['rh'].post_data(opt_res_latest["P_deferrable{}".format(k)], idx_closest, 
-                                            custom_deferrable_forecast_id[k]["entity_id"], 
+            input_data_dict['rh'].post_data(opt_res_latest["P_deferrable{}".format(k)], idx_closest,
+                                            custom_deferrable_forecast_id[k]["entity_id"],
                                             custom_deferrable_forecast_id[k]["unit_of_measurement"],
                                             custom_deferrable_forecast_id[k]["friendly_name"],
                                             type_var = 'deferrable',
@@ -514,7 +515,7 @@ def publish_data(input_data_dict: dict, logger: logging.Logger,
         else:
             custom_batt_forecast_id = params['passed_data']['custom_batt_forecast_id']
             input_data_dict['rh'].post_data(opt_res_latest['P_batt'], idx_closest,
-                                            custom_batt_forecast_id["entity_id"], 
+                                            custom_batt_forecast_id["entity_id"],
                                             custom_batt_forecast_id["unit_of_measurement"],
                                             custom_batt_forecast_id["friendly_name"],
                                             type_var = 'batt',
@@ -522,7 +523,7 @@ def publish_data(input_data_dict: dict, logger: logging.Logger,
             cols_published = cols_published+["P_batt"]
             custom_batt_soc_forecast_id = params['passed_data']['custom_batt_soc_forecast_id']
             input_data_dict['rh'].post_data(opt_res_latest['SOC_opt']*100, idx_closest,
-                                            custom_batt_soc_forecast_id["entity_id"], 
+                                            custom_batt_soc_forecast_id["entity_id"],
                                             custom_batt_soc_forecast_id["unit_of_measurement"],
                                             custom_batt_soc_forecast_id["friendly_name"],
                                             type_var = 'SOC',
@@ -530,8 +531,8 @@ def publish_data(input_data_dict: dict, logger: logging.Logger,
             cols_published = cols_published+["SOC_opt"]
     # Publish grid power
     custom_grid_forecast_id = params['passed_data']['custom_grid_forecast_id']
-    input_data_dict['rh'].post_data(opt_res_latest['P_grid'], idx_closest, 
-                                    custom_grid_forecast_id["entity_id"], 
+    input_data_dict['rh'].post_data(opt_res_latest['P_grid'], idx_closest,
+                                    custom_grid_forecast_id["entity_id"],
                                     custom_grid_forecast_id["unit_of_measurement"],
                                     custom_grid_forecast_id["friendly_name"],
                                     type_var = 'power',
@@ -540,8 +541,8 @@ def publish_data(input_data_dict: dict, logger: logging.Logger,
     # Publish total value of cost function
     custom_cost_fun_id = params['passed_data']['custom_cost_fun_id']
     col_cost_fun = [i for i in opt_res_latest.columns if 'cost_fun_' in i]
-    input_data_dict['rh'].post_data(opt_res_latest[col_cost_fun], idx_closest, 
-                                    custom_cost_fun_id["entity_id"], 
+    input_data_dict['rh'].post_data(opt_res_latest[col_cost_fun], idx_closest,
+                                    custom_cost_fun_id["entity_id"],
                                     custom_cost_fun_id["unit_of_measurement"],
                                     custom_cost_fun_id["friendly_name"],
                                     type_var = 'cost_fun',
@@ -551,8 +552,8 @@ def publish_data(input_data_dict: dict, logger: logging.Logger,
     if "optim_status" not in opt_res_latest:
         opt_res_latest["optim_status"] = 'Optimal'
         logger.warning("no optim_status in opt_res_latest, run an optimization task first")
-    input_data_dict['rh'].post_data(opt_res_latest['optim_status'], idx_closest, 
-                                    custom_cost_fun_id["entity_id"], 
+    input_data_dict['rh'].post_data(opt_res_latest['optim_status'], idx_closest,
+                                    custom_cost_fun_id["entity_id"],
                                     custom_cost_fun_id["unit_of_measurement"],
                                     custom_cost_fun_id["friendly_name"],
                                     type_var = 'optim_status',
@@ -560,8 +561,8 @@ def publish_data(input_data_dict: dict, logger: logging.Logger,
     cols_published = cols_published+["optim_status"]
     # Publish unit_load_cost
     custom_unit_load_cost_id = params['passed_data']['custom_unit_load_cost_id']
-    input_data_dict['rh'].post_data(opt_res_latest['unit_load_cost'], idx_closest, 
-                                    custom_unit_load_cost_id["entity_id"], 
+    input_data_dict['rh'].post_data(opt_res_latest['unit_load_cost'], idx_closest,
+                                    custom_unit_load_cost_id["entity_id"],
                                     custom_unit_load_cost_id["unit_of_measurement"],
                                     custom_unit_load_cost_id["friendly_name"],
                                     type_var = 'unit_load_cost',
@@ -569,8 +570,8 @@ def publish_data(input_data_dict: dict, logger: logging.Logger,
     cols_published = cols_published+["unit_load_cost"]
     # Publish unit_prod_price
     custom_unit_prod_price_id = params['passed_data']['custom_unit_prod_price_id']
-    input_data_dict['rh'].post_data(opt_res_latest['unit_prod_price'], idx_closest, 
-                                    custom_unit_prod_price_id["entity_id"], 
+    input_data_dict['rh'].post_data(opt_res_latest['unit_prod_price'], idx_closest,
+                                    custom_unit_prod_price_id["entity_id"],
                                     custom_unit_prod_price_id["unit_of_measurement"],
                                     custom_unit_prod_price_id["friendly_name"],
                                     type_var = 'unit_prod_price',
@@ -579,8 +580,8 @@ def publish_data(input_data_dict: dict, logger: logging.Logger,
     # Create a DF resuming what has been published
     opt_res = opt_res_latest[cols_published].loc[[opt_res_latest.index[idx_closest]]]
     return opt_res
-    
-        
+
+
 def main():
     r"""Define the main command line entry function.
 
@@ -625,8 +626,8 @@ def main():
     except Exception:
         logger.info("Version not found for emhass package. Or importlib exited with PackageNotFoundError.")
     # Setup parameters
-    input_data_dict = set_input_data_dict(config_path, base_path, 
-                                          args.costfun, args.params, args.runtimeparams, args.action, 
+    input_data_dict = set_input_data_dict(config_path, base_path,
+                                          args.costfun, args.params, args.runtimeparams, args.action,
                                           logger, args.debug)
     # Perform selected action
     if args.action == 'perfect-optim':

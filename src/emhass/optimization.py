@@ -551,7 +551,9 @@ class Optimization:
         return self.opt_res
         
     def perform_dayahead_forecast_optim(self, df_input_data: pd.DataFrame, 
-                                        P_PV: pd.Series, P_load: pd.Series) -> pd.DataFrame:
+                                        P_PV: pd.Series, P_load: pd.Series,
+                                        soc_init: Optional[float] = None,
+                                        soc_final: Optional[float] = None) -> pd.DataFrame:
         r"""
         Perform a day-ahead optimization task using real forecast data. \
         This type of optimization is intented to be launched once a day.
@@ -564,6 +566,12 @@ class Optimization:
         :param P_load: The forecasted Load power consumption. This power should \
             not include the power from the deferrable load that we want to find.
         :type P_load: pandas.DataFrame
+        :param soc_init: The initial battery SOC for the optimization. This parameter \
+            is optional, if not given soc_init = soc_final = soc_target from the configuration file.
+        :type soc_init: float
+        :param soc_final: The final battery SOC for the optimization. This parameter \
+            is optional, if not given soc_init = soc_final = soc_target from the configuration file.
+        :type soc_final: float
         :return: opt_res: A DataFrame containing the optimization results
         :rtype: pandas.DataFrame
 
@@ -574,7 +582,8 @@ class Optimization:
         # Call optimization function
         self.opt_res = self.perform_optimization(df_input_data, P_PV.values.ravel(), 
                                                  P_load.values.ravel(), 
-                                                 unit_load_cost, unit_prod_price)
+                                                 unit_load_cost, unit_prod_price,
+                                                 soc_init, soc_final)
         return self.opt_res
         
     def perform_naive_mpc_optim(self, df_input_data: pd.DataFrame, P_PV: pd.Series, P_load: pd.Series,
