@@ -239,10 +239,10 @@ if __name__ == "__main__":
         else:
             options = None       
 
-    #if data path specified by options.json
-    if options_json.exists():
-        if options.get('data_path', None) != None and options.get('data_path', None) != "default":
-            DATA_PATH = options.get('data_path', None);   
+        #if data path specified by options.json
+        if options_json.exists():
+            if options.get('data_path', None) != None and options.get('data_path', None) != "default":
+                DATA_PATH = options.get('data_path', None);
 
     config_path = Path(CONFIG_PATH)
     data_path = Path(DATA_PATH)
